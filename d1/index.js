@@ -45,13 +45,12 @@ function getCalibrationValuesIncludeSpelledOut(calibrationDocument) {
 		// positive lookaheads are weird in JS, this comes from regex101.com code gen
 		while ((m = regex.exec(line)) !== null) {
 			if (m.index === regex.lastIndex) {
-					regex.lastIndex++;
+				regex.lastIndex++;
 			}
 			m.forEach((match, groupIndex) => {
-					if(groupIndex == 1) numberStrings.push(match);
+				if (groupIndex == 1) numberStrings.push(match);
 			});
-	}
-
+		}
 
 		const numbers = numberStrings.map(num => {
 			if (mappings[num]) return mappings[num];
