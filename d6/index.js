@@ -30,7 +30,15 @@ console.log(doAllRaces(input));
 
 function doOneRace(raceStats) {
     const race = raceStats.split('\n').map(line => parseInt(line.match(/\d+/g).join('')));
-    return getNumberOfWaysToWin(race[0], race[1]);
+
+    const previousRecordPushTimes = [];
+    previousRecordPushTimes[0] = (-1 * race[0] + Math.sqrt(Math.pow(race[0], 2) - (4 * race[1]))) / (2 * -1);
+    previousRecordPushTimes[1] = (-1 * race[0] - Math.sqrt(Math.pow(race[0], 2) - (4 * race[1]))) / (2 * -1);
+    previousRecordPushTimes.sort((a, b) => a < b ? -1 : 1);
+    previousRecordPushTimes[0] = Number.isInteger(previousRecordPushTimes[0]) ? previousRecordPushTimes[0] + 1 : Math.ceil(previousRecordPushTimes[0]);
+    previousRecordPushTimes[1] = Number.isInteger(previousRecordPushTimes[1]) ? previousRecordPushTimes[1] - 1 : Math.floor(previousRecordPushTimes[1]);
+
+    return previousRecordPushTimes[1] - previousRecordPushTimes[0] + 1;
 }
 
 console.log(doOneRace(example));
