@@ -46,8 +46,8 @@ function sumOfGalaxyDistances(rawMap, expansionFactor) {
 
         const yDist = yMax - yMin;
         const xDist = xMax - xMin;
-        const expandedRowsToInsert = rowsInserted ? rowsInserted * (expansionFactor - 1) : 0;
-        const expandedColsToInsert = colsInserted ? colsInserted * (expansionFactor - 1) : 0;
+        const expandedRowsToInsert = rowsInserted ? rowsInserted * (expansionFactor === 1 ? 1 : expansionFactor - 1) : 0;
+        const expandedColsToInsert = colsInserted ? colsInserted * (expansionFactor === 1 ? 1 : expansionFactor - 1) : 0;
 
         const dist = yDist + xDist + expandedRowsToInsert + expandedColsToInsert;
         tot += dist;
