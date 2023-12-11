@@ -213,7 +213,7 @@ function getEnclosedArea(rawMap) {
 		}
 	}
 
-	function enclosed(start) {
+	function isEnclosed(start, enclosedSet, enopenedSet) {
 		const frontier = [start];
 		const reached = new Set();
 		reached.add(`${start[0]},${start[1]}`);
@@ -226,6 +226,11 @@ function getEnclosedArea(rawMap) {
 
 			const neighbours = getNeighbours(current, exploded).map(n => [current[0] + dirMap[n][0], current[1] + dirMap[n][1]]).filter(n => exploded[n[0]][n[1]] !== '#');
 			for (let n of neighbours) {
+				if (exploded[n[0]][n[1]] === '.') {
+					const key = `${n[0]},${n[1]}`;
+					if (enclosedSet.has(key)) return true;
+					else if (enopenedSet.has(key)) return false;
+				}
 				if (!reached.has(`${n[0]},${n[1]}`)) {
 					frontier.push(n);
 					reached.add(`${n[0]},${n[1]}`);
@@ -235,15 +240,18 @@ function getEnclosedArea(rawMap) {
 		return true;
 	}
 
-	let enclosedCount = 0;
+	const enclosed = new Set();
+	const enopened = new Set();
+
 	for(let y = 0; y < exploded.length; y++) {
 		for (let x = 0; x < exploded[0].length; x++) {
 			if (exploded[y][x] === '.') {
-				if (enclosed([y,x])) enclosedCount++;
+				if (isEnclosed([y,x], enclosed, enopened)) enclosed.add(`${y},${x}`);
+				else enopened.add(`${y},${x}`);
 			}
 		}
 	}
-	return enclosedCount;
+	return enclosed.size;
 }
 
 function printMap(map) {
