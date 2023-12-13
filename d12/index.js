@@ -17,19 +17,25 @@ function countPossibleArrangements(rawSprings) {
 	let tot = 0;
 	for (let rec of springConditionRecords) {
 		const [springLayout, springLengths] = rec;
+		const totalSprings =  springLengths.reduce((t, s) => t + s);
+		const shownSprings = springLayout.split('').reduce((t, c) => c === '#' ? t + 1 : t, 0);
 		const matches = springLayout.matchAll(/\?/g);
 		const unknowns = [];
 		
 		for(let match of matches) unknowns.push(match.index);
 
-		const combos = Math.pow(2, unknowns.length);
+		const nCombos = Math.pow(2, unknowns.length);
+		const combos = Array(nCombos).fill().map((_, i) => (i).toString(2).padStart(unknowns.length, '0'));
+		const filtered = combos.filter(c => {
+			const match = c.match(/1/g)
+			return match && match.length + shownSprings === totalSprings;
+		});
 		let viableCombos = 0;
 
-		combos: for (let i = 0; i < combos; i++) {
-			const bin = (i).toString(2).padStart(unknowns.length, '0');
+		combos: for (let combo of filtered) {
 			let option = springLayout.split('');
 			for (let j = 0; j < unknowns.length; j++) {
-				option[unknowns[j]] = bin[j] === '1' ? '#' : '.';
+				option[unknowns[j]] = combo[j] === '1' ? '#' : '.';
 			}
 			option = option.join('');
 			const springs = option.matchAll(/#+/g);
@@ -47,4 +53,6 @@ function countPossibleArrangements(rawSprings) {
 }
 
 console.log(countPossibleArrangements(example));
+console.time('part1');
 console.log(countPossibleArrangements(input));
+console.timeEnd('part1');
