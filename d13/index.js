@@ -146,7 +146,6 @@ function fixSmudge(pattern) {
 	throw new Error('should not have happened');
 }
 
-
 function scorePattern(pattern) {
 	const reflectedRows = findReflectedRows(pattern);
 	if (!reflectedRows) {
