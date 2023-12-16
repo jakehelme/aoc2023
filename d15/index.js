@@ -33,15 +33,15 @@ function totalFocusingPower(rawSteps) {
 	for (let step of steps) {
 		const pattern = new RegExp(`^${step.label}\\s\\d$`);
 		const lensIndex = boxes[step.boxId].findIndex(lens => pattern.test(lens));
-		if(step.op === '=') {
-			if(lensIndex >= 0) {
+		if (step.op === '=') {
+			if (lensIndex >= 0) {
 				boxes[step.boxId][lensIndex] = `${step.label} ${step.focalStrength}`
 			} else {
 				boxes[step.boxId].push(`${step.label} ${step.focalStrength}`);
 			}
 		} else {
 			if (lensIndex >= 0) {
-				boxes[step.boxId] = [...boxes[step.boxId].slice(0,lensIndex), ...boxes[step.boxId].slice(lensIndex + 1)];
+				boxes[step.boxId] = [...boxes[step.boxId].slice(0, lensIndex), ...boxes[step.boxId].slice(lensIndex + 1)];
 			}
 		}
 	}
@@ -52,8 +52,8 @@ function totalFocusingPower(rawSteps) {
 			return sub + ((boxNumber + 1) * (lensNumber + 1) * focal);
 		}, 0);
 		return tot + subTot;
-	}, 0)
-	
+	}, 0);
+
 	return total;
 }
 
