@@ -95,7 +95,6 @@ function getLagoonVolume(rawMap) {
 	// map.forEach(l => console.log(l.join('')));
 
 	const filled = new Set();
-	const unfilled = new Set();
 
 	for (let y = 0; y < map.length; y++) {
 		for (let x = 0; x < map[0].length; x++) {
@@ -106,49 +105,34 @@ function getLagoonVolume(rawMap) {
 			else {
 				const frontier = [[y, x]];
 				const reached = new Set();
-				reached.add(`${y},${x}`)
+				let hitEdge = false;
+				reached.add(key);
 				bfs: while (frontier.length) {
 					const [cy, cx] = frontier.pop();
-					const neighbours = [[-1, 0], [0, 1], [1, 0], [0, -1]]
-						.map(p => [cy + p[0], cx + p[1]])
-
-					const edges = neighbours.filter(p => p[0] === 0 || p[0] === map.length || p[1] === 0 || p[1] === map[0].length);
-					if (edges.length) {
-						unfilled.add(`${cy},${cx}`);
+					if (cy === 0 || cy === map.length - 1 || cx === 0 || cx === map[0].length - 1) {
+						hitEdge = true;
 						break;
 					}
-					
+					let neighbours = [[-1, 0], [0, 1], [1, 0], [0, -1]]
+						.map(p => [cy + p[0], cx + p[1]])
+						.filter(p => map[p[0]][p[1]] === '.');
+
 					for (const next of neighbours) {
 						const nKey = `${next[0]},${next[1]}`;
-
-						if (filled.has(nKey)) {
-							filled.add(`${cy},${cx}`);
+						if(filled.has(nKey)) {
+							
 							break bfs;
 						}
-						else if (unfilled.has(nKey)) {
-							unfilled.add(`${cy},${cx}`);
-							break bfs;
-						}
-
 						if (!reached.has(nKey)) {
 							frontier.push(next);
 							reached.add(nKey);
 						}
 					}
 				}
+				if (!hitEdge) {
+					filled.add(key);
+				}
 			}
-			// if (borderSections % 2) filled++;
-			// for (let i = x + 1; i < map[0].length; i++) {
-			// 	if (map[y][i] === '#') {
-			// 		for (let j = x - 1; j >= 0; j--) {
-			// 			if (map[y][j] === '#') {
-			// 				filled++;
-			// 				break;
-			// 			}
-			// 		}
-			// 		break;
-			// 	}
-			// }
 		}
 	}
 
