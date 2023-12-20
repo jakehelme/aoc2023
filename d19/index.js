@@ -66,7 +66,6 @@ function processPart(workflows, part) {
 				break;
 			}
 		}
-
 	}
 	return wf === 'A';
 }
@@ -79,66 +78,43 @@ function runPartsThroughWorkflows(workflows, parts) {
 	return tot;
 }
 
-// console.log(runPartsThroughWorkflows(...parseInput(example)));
-// console.log(runPartsThroughWorkflows(...parseInput(input)));
+console.log(runPartsThroughWorkflows(...parseInput(example)));
+console.log(runPartsThroughWorkflows(...parseInput(input)));
 
 function getDistinctRatingCombos(workflows) {
-	const validRanges = [];
-	for (const key of Object.keys(workflows)) {
-		const ranges = [[1, 4000], [1, 4000], [1, 4000], [1, 4000]];
-		let next = key;
-		let search = 'A';
-		while (true) {
-			let negate = false;
-			for (let i = workflows[next].length - 1; i >= 0; i--) {
-				const rule = workflows[next][i];
-				if (negate || rule.then === search) {
-					if (rule.compare) {
-						if (!negate) {
-							if (rule.isGT) {
-								ranges[paramPos[rule.param]][0] = Math.max(rule.compare + 1, ranges[paramPos[rule.param]][0]);
-							} else {
-								ranges[paramPos[rule.param]][1] = Math.min(rule.compare - 1, ranges[paramPos[rule.param]][1]);
-							}
-						} else {
-							if (rule.isGT) {
-								ranges[paramPos[rule.param]][1] = Math.min(rule.compare, ranges[paramPos[rule.param]][1]);
-							} else {
-								ranges[paramPos[rule.param]][0] = Math.max(rule.compare, ranges[paramPos[rule.param]][0]);
-							}
-						}
+	const start = { wf: 'in', xMin: 1, xMax: 4000, mMin: 1, mMax: 4000, aMin: 1, aMax: 4000, sMin: 1, sMax: 4000 };
+	const frontier = [start];
+	let tot = 0;
 
-					} else {
-						if (i >= 1 && rule.then === workflows[next][i - 1].then){
-							i--;
-						}
-					}
-					negate = true;
-				}
-			}
-			if (negate) {
-				if (next === 'in'){
-					validRanges.push(ranges);
-					break;
-				}
-				search: for (const searchKey in workflows) {
-					for (const searchRule of workflows[searchKey]) {
-						if (searchRule.then === next) {
-							search = next;
-							next = searchKey;
-							break search;
-						}
-					}
+	while (frontier.length) {
+		const current = frontier.shift();
+		if (current.wf === 'A') {
+			tot += (
+				(current.xMax - current.xMin + 1) *
+				(current.mMax - current.mMin + 1) *
+				(current.aMax - current.aMin + 1) *
+				(current.sMax - current.sMin + 1));
+			continue;
+		} else if (current.wf === 'R') continue;
+		for (const rule of workflows[current.wf]) {
+			const next = { ...current, wf: rule.then };
+			if (rule.compare) {
+				if (rule.isGT) {
+					next[`${rule.param}Min`] = Math.max(rule.compare + 1, next[`${rule.param}Min`]);
+					frontier.push(next);
+					current[`${rule.param}Max`] = Math.min(rule.compare, current[`${rule.param}Max`]);
+				} else {
+					next[`${rule.param}Max`] = Math.min(rule.compare - 1, next[`${rule.param}Max`]);
+					frontier.push(next);
+					current[`${rule.param}Min`] = Math.max(rule.compare, current[`${rule.param}Min`]);
 				}
 			} else {
-				break;
+				frontier.push(next);
 			}
 		}
 	}
-	// console.log();
-	return validRanges.reduce((total, range) => total + range.reduce((t, r) => t * (r[1] - r[0] + 1), 1), 0);
+	return tot;
 }
-
 
 console.log(getDistinctRatingCombos(parseInput(example)[0]));
 console.log(getDistinctRatingCombos(parseInput(input)[0]));
