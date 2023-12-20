@@ -6,7 +6,7 @@ const example1 =
 &inv -> a`;
 
 const example2 =
-`broadcaster -> a
+	`broadcaster -> a
 %a -> inv, con
 &inv -> b
 %b -> con
@@ -14,10 +14,11 @@ const example2 =
 
 const input = await Bun.file('./d20/input.txt').text();
 
-function pressButton(modules, pressCount) {
+function pressButton(modules, pressCount, returnCount = true, search = null) {
 	let totLow = 0;
 	let totHigh = 0;
 	const countSig = sig => sig ? totHigh++ : totLow++;
+
 	for (let i = 0; i < pressCount; i++) {
 		const start = { module: 'broadcaster', sig: 0, input: null }
 		countSig(0);
@@ -26,7 +27,7 @@ function pressButton(modules, pressCount) {
 		while (queue.length) {
 			const current = queue.shift();
 			let sig;
-			if(current.module === 'rx' && current.sig === 0) return true;
+			if (current.module === 'rx' && current.sig === 0) return true;
 			if (current.module === 'broadcaster') {
 				sig = current.sig;
 			} else if (!modules.has(current.module)) {
@@ -37,21 +38,23 @@ function pressButton(modules, pressCount) {
 			} else if (modules.get(current.module).type === '&') {
 				modules.get(current.module).inputs.set(current.input, current.sig);
 				const inputs = Array.from(modules.get(current.module).inputs.values());
-				if (inputs.every(i => i)) sig = 0;
-				else sig = 1;
+				if (inputs.every(i => i)) {
+					sig = 0;
+					if (search && current.module === search) return true;
+				}
+				else {
+					sig = 1;
+				}
 			} else continue;
 
-
 			const outputs = modules.get(current.module).outputs;
-
 			for (const output of outputs) {
 				queue.push({ module: output, sig, input: current.module });
-				// countSig(sig)
+				countSig(sig)
 			}
 		}
 	}
-	return false;
-	// return totLow * totHigh;
+	return returnCount ? totLow * totHigh : false;
 }
 
 function parseInput(raw) {
@@ -81,17 +84,41 @@ function parseInput(raw) {
 	return modules;
 }
 
-// console.log(pressButton(parseInput(example1), 1000));
-// console.log(pressButton(parseInput(example2), 1000));
-// console.log(pressButton(parseInput(input), 1000));
+console.log(pressButton(parseInput(example1), 1000));
+console.log(pressButton(parseInput(example2), 1000));
+console.log(pressButton(parseInput(input), 1000));
 
-let presses = 0;
-const modules = parseInput(input);
-let found = false;
-while (!found) {
-	presses++;
-	found = pressButton(modules, 1);
-	if (!(presses % 100000)) console.log(presses);
+function gcd(a, b) {
+	if (b == 0)	return a;
+	return gcd(b, a % b);
 }
 
-console.log(`Final presses: ${presses}`);
+function lcm(arr) {
+	let ans = arr[0];
+	for (let i = 1; i < arr.length; i++)
+		ans = (((arr[i] * ans)) /	(gcd(arr[i], ans)));
+
+	return ans;
+}
+
+function getPressesToTriggerRx() {
+	const modules = parseInput(input);
+	const rxFeeders = [];
+	modules.forEach((val, key) => {
+		if (val.inputs && val.inputs.size > 1 && val.outputs.indexOf('rx') === -1) rxFeeders.push(key);
+	});
+	const loopsOn = [];
+	for (const f of rxFeeders) {
+		const m = parseInput(input);
+		let found = false;
+		let presses = 0;
+		while (!found) {
+			presses++;
+			found = pressButton(m, 1, false, f);
+		}
+		loopsOn.push(presses);
+	}
+	return lcm(loopsOn);
+}
+
+console.log(getPressesToTriggerRx());
