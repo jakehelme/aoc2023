@@ -21,13 +21,13 @@ const parseInput = raw => raw.split('\n').reduce((m, line) => {
 	return m;
 }, new Map());
 
-function getUniqueGroups(nodes) {
+function getDisconnectedGroups(nodes) {
 	const groups = [];
 	for (const node of nodes.keys()) {
 		const start = node;
 		const visited = new Set([start]);
 		const frontier = [start];
-		while(frontier.length) {
+		while (frontier.length) {
 			const current = frontier.shift();
 			for (const next of nodes.get(current)) {
 				if (!visited.has(next)) {
@@ -57,68 +57,87 @@ function getUniqueGroups(nodes) {
 	return groups;
 }
 
-async function blurple(nodes) {
-	// const wires = new Set();
-	const wires = [];
-	for (const [node, otherNodes] of nodes) {
-		for (const otherNode of otherNodes) {
-			const wire = [node, otherNode];
-			wire.sort();
-			// wires.add(wire.join('-'));
-			wires.push(wire.join('-'));
-		}
-	}
-
-	// create viz
-	// const Links = [["Source", "Target"]]
-	// for (const [node, others] of nodes) {
-	// 	for (const other of others) {
-	// 		Links.push([node, other]);
-	// 	}
-	// }
-
-	// await Bun.write('./nodes.json', JSON.stringify(Links));
-
+function backFillNodes(nodes) {
 	for (const [node, otherNodes] of nodes) {
 		for (const otherNode of otherNodes) {
 			if (nodes.has(otherNode)) nodes.get(otherNode).add(node);
 			else nodes.set(otherNode, new Set([node]));
 		}
 	}
-
-	// for (let i = 0; i < wires.length - 2; i++) {
-	// 	console.log(`${i + 1}/${wires.length - 2}`);
-	// 	for (let j = i + 1; j < wires.length - 1; j++) {
-	// 		for (let k = j + 1; k < wires.length; k++) {
-	// 			const [a, b] = wires[i].split('-');
-	// 			const [c, d] = wires[j].split('-');
-	// 			const [e, f] = wires[k].split('-');
-	// 			const tempNodes = structuredClone(nodes);
-	// 			tempNodes.get(a).delete(b);
-	// 			tempNodes.get(b).delete(a);
-	// 			tempNodes.get(c).delete(d);
-	// 			tempNodes.get(d).delete(c);
-	// 			tempNodes.get(e).delete(f);
-	// 			tempNodes.get(f).delete(e);
-	// 			const uniqueGroups = getUniqueGroups(tempNodes);
-	// 			if (uniqueGroups.length === 2) {
-	// 				return uniqueGroups[0].size * uniqueGroups[1].size;
-	// 			};
-	// 		}
-	// 	}
-	// }
-	const tempNodes = structuredClone(nodes);
-	tempNodes.get('jkn').delete('cfn');
-	tempNodes.get('cfn').delete('jkn');
-	tempNodes.get('sfd').delete('ljm');
-	tempNodes.get('ljm').delete('sfd');
-	tempNodes.get('rph').delete('gst');
-	tempNodes.get('gst').delete('rph');
-	const uniqueGroups = getUniqueGroups(tempNodes);
-	return uniqueGroups[0].size * uniqueGroups[1].size;
-	// return null;
 }
 
-// console.log(blurple(parseInput(example)));
-const ans = await blurple(parseInput(input));
-console.log(ans);
+function getEdges(nodes) {
+	const edges = new Map();
+	for (const [node, otherNodes] of nodes) {
+		for (const otherNode of otherNodes) {
+			const edge = [node, otherNode];
+			edge.sort();
+			edges.set(edge.join('-'), 0);
+		}
+	}
+	return edges;
+}
+
+function traverseShortestPath(graph, start, end, connections) {
+	const frontier = [start];
+	const cameFrom = new Map([[start, null]]);
+	while (frontier.length) {
+		const current = frontier.shift();
+		if (current === end) {
+			const path = [];
+			let pos = end;
+			while (pos !== start) {
+				path.push(pos);
+				const next = cameFrom.get(pos);
+				const connection = [pos, next].sort().join('-');
+				connections.set(connection, connections.get(connection) + 1);
+				pos = next;
+			}
+			break;
+		}
+		const neighbours = graph.get(current);
+		for (const next of neighbours) {
+			if (!cameFrom.has(next)) {
+				frontier.push(next);
+				cameFrom.set(next, current);
+			}
+		}
+	}
+}
+
+function shuffle(array) {
+	let currentIndex = array.length, randomIndex;
+	while (currentIndex > 0) {
+		randomIndex = Math.floor(Math.random() * currentIndex);
+		currentIndex--;
+		[array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+	}
+	return array;
+}
+
+function findWiresToDC(raw, randomTraversals) {
+	const modules = parseInput(raw);
+	const wires = getEdges(modules);
+	const modList = Array.from(modules.keys());
+	backFillNodes(modules);
+	for (let i = 0; i < randomTraversals; i++) {
+		shuffle(modList);
+		const node1 = modList[0];
+		const node2 = modList[1];
+		traverseShortestPath(modules, node1, node2, wires);
+	}
+
+	const topThreeUsed = Array.from(wires, ([key, used]) => ({ wire: key, used })).sort((a, b) => b.used - a.used).slice(0, 3);
+	for (let i = 0; i < 3; i++) {
+		const [m1, m2] = topThreeUsed[i].wire.split('-');
+		modules.get(m1).delete(m2);
+		modules.get(m2).delete(m1);
+	}
+
+	const groups = getDisconnectedGroups(modules);
+	if (groups.length === 2) return groups[0].size * groups[1].size;
+	else throw new Error('F');
+}
+
+console.log(findWiresToDC(example, 1000));
+console.log(findWiresToDC(input, 1000));
